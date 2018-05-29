@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Alert Search</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <!--<link href="static/cssform/css/style.css" rel="stylesheet" type="text/css" />-->
+    <link href="static/cssform/bootstrap.min.css" rel="stylesheet">
+    <link href="static/font-awesome/css/font-awesome.css" rel="stylesheet">
+
+    <link href="static/cssform/animate.css" rel="stylesheet">
+    <link href="static/cssform/style.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="static/cssform/css/shijian.css"/>
+
+    <!-- 最后引入 -->
+    <link href="static/cssform/css/main.css" rel="stylesheet" />
+    <link href="static/cssform/css/main-modal.css" rel="stylesheet" />
+
+    <script type="text/javascript" src="static/js/jquery/jquery-2.1.4.js"></script>
+    <script	src="static/plugins/dataTables-1.10.7/media/js/jquery.dataTables.js"></script>
+    <script	src="static/plugins/dataTables-1.10.7/plugins/integration/bootstrap/2/dataTables.bootstrap.js"></script>
+
+
+    <style>
+        .monitoerdiv{
+            position: fixed;
+            z-index: 3;
+            /*top: 50%;*/
+            width: 100%;
+            /*max-height: 50%;*/
+            /*text-align: center;*/
+            font-size: 10px;
+            /*display: none;*/
+            /*alpha:0.5;*/
+            opacity: 0.6;
+            background-color: gainsboro;
+            overflow: hidden;
+            _height: expression(this.scrollHeight > 456 ? "456px" : auto);
+        }
+    </style>
+
+
+</head>
+<body>
+    <div>
+        <div>
+            <div class="jumbotron">
+                <h1>Zabbix Alert Search</h1>
+                <p>Please  Limited Time</p>
+                <div id = "topS" class="panel-heading" style="float: left ;">
+                    <form id="alertForm" class="form-inline" action="/GetzabbixAlert/downAlert/" method="get">
+                        <div class="form-group">
+                            <label><h3>申请时间</h3></label>
+                            <input type="text" class="form-control" id="input1" name="starttime">
+                            <label><h3>至</h3></label>
+                            <input type="text" class="form-control" id="input2" name="endtime">
+                        </div>&nbsp;&nbsp;
+                        <button type="button" class="btn btn-primary" onClick="selectForm()">查询</button>&nbsp;&nbsp;
+                        <button type="button" onClick="javascript:downAlert()"  style=" background-color:#FF7575;border: hidden;text-align: center;vertical-align: middle" class="btn btn-primary">下载项目明细</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div>
+            <div class="ibox-title">
+                <h5><small>The Result Of Search </small>Zabbix Alert</h5>
+            </div>
+        </div>
+		<table class="table table-bordered">
+			<thead id = "rs_head">
+				<tr>
+          			<td width="20%" style="text-align: center">报警次数</td>
+                    <td width="80%">报警内容</td>
+				</tr>
+			</thead>
+			<tbody id = 'resultAlert' style="height: 100px ; overflow: auto;">
+                    <!--<tr>-->
+                        <!--<td width="20%"><span>{{ list.create_time }}</span></td>-->
+                        <!--<td width="80%"><span>{{ list.ProjectName }}</span></td>-->
+                    <!--</tr>-->
+			</tbody>
+		</table>
+
+
+        <div id = "serverlist" class="monitoerdiv" style="position: absolute ; right: 0%  ; top: 0%; width: 20% ; height: 100%;">
+            <form class="form-horizontal" style="height: 100%">
+                <div style="background-color: #0a6aa1 ; text-align: center">
+                    <label id = 'server_lable' style="color: white"><h3>实例列表</h3></label>
+                    <a href="javascript:colseServers('serverlist')"><i class="fa fa-play fa-rotate-90" style="position: absolute; left: 1%;top: 1%; color: white"></i></a>
+                </div>
+                    <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th width="10%" style="text-align: center" id="selectCheck"><a href="javascript:selectAll()">全选</a></th>
+                            <th width="90%">实例名</th>
+                        </tr>
+                    </thead>
+                    <thead id="server_list">
+                        <!--<tr>-->
+                            <!--<td width="10%"><span><input type="checkbox" value="{{ list.id }} " name = 'pome' /></span></td>-->
+                            <!--<td width="90%">VB_AWS_SIP_PROXY_2_API-02_10.10.54.104</td>-->
+                        <!--</tr>-->
+                    </thead>
+                </table>
+                <!--<div id="server_foot">-->
+                    <!--<input type="button" value="确定" onclick="closeDiv('service_show_catalog' , 'service_show_catalog_back')" />-->
+                <!--</div>-->
+            </form>
+        </div>
+
+	</div>
+
+</body>
+<script src="static/js/jquer_shijian.js" type="text/javascript" charset="utf-8"></script>
+	<script type="text/javascript">
+		$("#input1").shijian({
+			y:-10//当前年份+10
+		});
+
+        $("#input2").shijian({
+			y:-10//当前年份+10
+		})
+	</script>
+<script type="text/javascript">
+
+
+    //加载实例列表
+    jQuery.ajax({
+                type : "post",
+                url  : "/GetzabbixAlert/getAllServers/",
+                dataType : 'json',
+                async: false,
+                error : function(event ,request , settings){
+                    alert("实例列表加载失败......");
+                    return flase;
+                },
+                success : function(obj){
+                    var html = '';
+                    for (var i in obj){
+                        html = html + '<tr><td width="10%"><span><input type="checkbox" value= ' + obj[i] + ' name = "pome" /></span></td>'
+                        html = html + '<td width="90%">' + obj[i] + '</td></tr>';
+                    }
+                    $("#server_list").html(html);
+                }
+            });
+
+
+    function selectForm(){
+        var x ;
+        var start_time = $("#input1").val();
+        var end_time = $("#input2").val();
+        var servers = checkSeletServer();
+        var url = '/GetzabbixAlert/getAlert/';
+        var data = "{'start_time':'" + start_time + "', 'end_time':'" + end_time + "'}";
+        if(servers != ''){
+            x = confirm("查询统计结果? 取消则查询明细");
+            if(x == true){
+                url = '/GetzabbixAlert/getStatics/'
+                data = "{'start_time':'" + start_time + "', 'end_time': '" + end_time + "', 'type':'statics' , 'servers':'" + servers + "'}";
+            }else{
+                url = '/GetzabbixAlert/getStatics/'
+                data = "{'start_time':'" + start_time + "', 'end_time': '" + end_time + "', 'type':'detail' , 'servers':'" + servers + "'}";
+            }
+        }
+
+        if (start_time == '' || end_time ==''){
+            alert('请输入查询时间');
+            return false;
+        }
+        $.ajax({
+            type : "post",
+            url  : url,
+            data : data,
+            dataType : "json",
+            error : function(event ,request , settings){
+                alert("操作失败,请稍等片刻重新尝试......");
+                return false;
+            },
+            success : function(data){
+//                rs_head
+                var htmlContent = '';
+                if(x == false){
+                    var htmlhead = '<tr> <td width="15%" style="text-align: center">告警时间</td><td width="15%" style="text-align: center">入库时间</td><td width="30%" style="text-align: center">主机</td><td width="30%" style="text-align: center">告警内容</td><td width="10%" style="text-align: center">告警值</td></tr>';
+                    $("#rs_head").html(htmlhead);
+                    for(i in data){
+                        htmlContent = htmlContent + '<tr><td width="15%" style="text-align: center"><span></span>' +data[i][1]+ '</td>';
+                        htmlContent = htmlContent + '<td width="15%" style="text-align: center"><span></span>' +data[i][2]+ '</td>';
+                        htmlContent = htmlContent + '<td width="30%" style="text-align: center"><span></span>' +data[i][3]+ '</td>';
+                        htmlContent = htmlContent + '<td width="30%" style="text-align: center"><span></span>' +data[i][4]+ '</td>';
+                        htmlContent = htmlContent + '<td width="10%" style="text-align: center"><span></span>' +data[i][5]+ '</td></tr>';
+                        $("#resultAlert").html(htmlContent);
+                    }
+                }else{
+                    var htmlhead = '<tr><td width="20%" style="text-align: center">报警次数</td><td width="80%">报警内容</td></tr>';
+                    $("#rs_head").html(htmlhead);
+                    for(i in data){
+                        htmlContent = htmlContent + '<tr><td width="20%" style="text-align: center"><span></span>' +data[i][0]+ '</td>';
+                        htmlContent = htmlContent + '<td width="80%"><span>' + data[i][1] + '</span></td>';
+                        $("#resultAlert").html(htmlContent);
+                    }
+                }
+            }
+        });
+
+
+    }
+
+
+    //查看选择了哪些主机
+    function checkSeletServer(){
+        var id = document.getElementsByName("pome");
+        for(var i = 0; i < id.length; i++){
+             if(id[i].checked)
+             break;
+             if(i == id.length-1){
+               return '';
+             }
+        }
+        var radio = document.getElementsByName("pome");
+        var val = "";
+        for(var i=0;i<radio.length;i++)
+        {
+            if(radio[i].checked){
+                val = val + radio[i].value.trim() + ',';
+            }
+        }
+        return val;
+    }
+
+
+//    下载告警明细
+    function downAlert(){
+        var start_time = $("#input1").val();
+        var end_time = $("#input2").val();
+
+        if (start_time == '' || end_time ==''){
+            alert('请输入查询时间');
+            return false;
+        }
+        $("#alertForm").submit();
+    }
+
+//    关闭
+    function colseServers(node){
+        document.getElementById(node).style.display = "none";
+    }
+
+
+
+
+
+
+    function selectAll(){
+            var radio = document.getElementsByName("pome");
+            var val = "";
+            for(var i=0;i<radio.length;i++)
+            {
+                radio[i].checked=true;
+            }
+        $("#selectCheck").html("<a href='javascript:selectNone()'>反选</a>")
+       }
+
+       function selectNone(){
+           var radio = document.getElementsByName("pome");
+            var val = "";
+            for(var i=0;i<radio.length;i++)
+            {
+                radio[i].checked=false;
+            }
+        $("#selectCheck").html("<a href='javascript:selectAll()'>全选</a>")
+       }
+
+</script>
+
+
+</html>
